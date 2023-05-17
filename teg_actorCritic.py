@@ -289,7 +289,7 @@ class Simulation:
             # delta0 = delta0 + np.log(1 + t_ep)/(np.log(1 + t_ep) + np.log(1 + 100))
             print('delta0 = ', delta0, '. ', end='', sep='')
             print()
-            actor.update(delta0, feature_vec_new) # _new?
+            actor.update(delta0, feature_vec)
             t_ep = t_ep + 1
         return (critic, actor)
     def test(self, environment, actor):
@@ -344,7 +344,7 @@ wind_vec = np.zeros((nC))
 #wind_vec[np.array([3, 4, 5, 6])] = 1
 pit_vec = np.array([])
 #pit_vec = np.array([[0, 4], [0, 5], [0, 6], [4, 4], [4, 5], [4, 6]])
-pit_prob = 0.5
+pit_prob = 0.25
 pit_punishment = -1
 backtrack_punishment = 0
 terminal_reward = 0
@@ -356,18 +356,20 @@ environment.define_specifics(wind_vec, pit_vec, pit_prob, wall_vec, pit_punishme
 obs_ind = environment.get_observables_indices()
 
 critic = Critic(environment.nFeatures)
-critic.lambda0_w = 0
+critic.lambda0_w = 0.5
 critic.lambda0_w = critic.lambda0_w * np.ones((environment.nFeatures, 1))
 critic.lambda0_w[obs_ind[1][0]:obs_ind[1][1]] = 0
 
 actor = Actor(environment.nFeatures, environment.nA)
-actor.lambda0_theta = 0
+actor.lambda0_theta = 0.5
 actor.lambda0_theta = actor.lambda0_theta * np.ones((environment.nFeatures, 1))
 actor.lambda0_theta[obs_ind[1][0]:obs_ind[1][1]] = 0
 
 max_episode_length = 1e3
 sim = Simulation(max_episode_length)
 
-critic, actor = sim.train(1e3, environment, critic, actor)
+critic, actor = sim.train(1e4, environment, critic, actor)
 route = sim.test(environment, actor)
 sim.plots(environment, critic, actor, route)
+
+environment.pit_prob = 0
