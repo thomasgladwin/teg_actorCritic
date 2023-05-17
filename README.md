@@ -1,5 +1,5 @@
 # teg_actorCritic
-Actor-critic "GridWorld with crosswinds" toy model for reinforcement learning.
+Actor-critic "GridWorld with crosswinds" toy model for reinforcement learning. Added: SARSA(lambda) model for GridWorld with (random) negative-reward pits to avoid.
 
 Practice project for Sutton & Barto. The model has the most basic state-indicator binary parameterization for the actor's and critic's weights. The model uses continuous learning on reset-on-terminal-state episodes.
 
