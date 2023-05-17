@@ -97,7 +97,7 @@ class Environment:
         X = X.reshape(np.prod(X.shape)).copy()
         return X
     def state_to_goalrelative(self):
-        if False:
+        if True:
             X = np.zeros((2, 3))
             if self.s_r < self.rTerm:
                 X[0,0] = 1
@@ -162,6 +162,7 @@ class Environment:
             if (new_s_r >= 0 and new_s_r < self.nR) and (new_s_c >= 0 and new_s_c < self.nC) and not self.f_into_wall(new_s_r, new_s_c):
                 if self.backtrack_punishment < 0 or (not (new_s_r, new_s_c) in self.memory):
                     allowed_actions = np.append(allowed_actions, a)
+        allowed_actions = allowed_actions.astype(int)
         return X, allowed_actions
     def respond_to_action(self, a):
         new_s_r = self.s_r + self.A_effect_vec[a][0]
@@ -217,7 +218,7 @@ class Actor:
         self.lambda0_theta = 0.5
         self.a = 0
     def policy_prob(self, feature_vec, b):
-        c = 0 * np.max(np.dot(np.transpose(feature_vec), self.theta0))
+        c = np.max(np.dot(np.transpose(feature_vec), self.theta0))
         prefs = np.exp(np.dot(np.transpose(feature_vec), self.theta0) - c)
         prob = prefs[0][b] / np.sum(prefs)
         return prob
@@ -239,19 +240,18 @@ class Actor:
                 probs = np.ones(probs.shape) / len(probs) # If need to choose between effectively 0-prob allowed actions
             self.a = np.random.choice(allowed_actions, p=probs)
         return self.a
-    def delta_ln_pi(self, feature_vec):
+    def delta_ln_pi(self, feature_vec, allowed_actions):
         term1 = np.zeros((self.nFeatures, self.nA))
         iStates = np.where(feature_vec == 1)[0] # [0]
         term1[iStates, self.a] = 1
         term2 = np.zeros((self.nFeatures, self.nA))
-        for b in range(self.nA):
-            if b != self.a:
-                tmp = np.zeros((self.nFeatures, self.nA))
-                tmp[iStates, b] = 1
-                term2 = term2 + self.policy_prob(feature_vec, b) * tmp
+        for b in range(self.nA): # allowed_actions:
+            tmp = np.zeros((self.nFeatures, self.nA))
+            tmp[iStates, b] = 1
+            term2 = term2 + self.policy_prob(feature_vec, b) * tmp
         return term1 - term2
-    def update(self, delta0, feature_vec):
-        delta_this = self.delta_ln_pi(feature_vec)
+    def update(self, delta0, feature_vec, allowed_actions):
+        delta_this = self.delta_ln_pi(feature_vec, allowed_actions)
         self.z_theta = self.lambda0_theta * self.z_theta + delta_this
         self.theta0 = self.theta0 + self.alpha0_theta * delta0 * self.z_theta
 
@@ -289,7 +289,7 @@ class Simulation:
             # delta0 = delta0 + np.log(1 + t_ep)/(np.log(1 + t_ep) + np.log(1 + 100))
             print('delta0 = ', delta0, '. ', end='', sep='')
             print()
-            actor.update(delta0, feature_vec)
+            actor.update(delta0, feature_vec, allowed_actions)
             t_ep = t_ep + 1
         return (critic, actor)
     def test(self, environment, actor):
@@ -332,7 +332,7 @@ class Simulation:
         plt.show()
 
 # Inits
-nR = 9; nC = 9;
+nR = 7; nC = 7;
 #rStart = 0; cStart = 3;
 rStart = np.nan; cStart = np.nan;
 #rTerminal = 3; cTerminal = 7
@@ -345,31 +345,31 @@ wind_vec = np.zeros((nC))
 pit_vec = np.array([])
 #pit_vec = np.array([[0, 4], [0, 5], [0, 6], [4, 4], [4, 5], [4, 6]])
 pit_prob = 0.25
-pit_punishment = -1
+pit_punishment = -0.1
 backtrack_punishment = 0
-terminal_reward = 0
+terminal_reward = 1
 wall_vec = np.array([])
 # wall_vec = np.array([[4, 4], [5, 4], [6, 4], [7, 4], [8, 4]]) # , [3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [8, 3], [9, 3]
 environment = Environment(nR, nC, rStart, cStart, rTerminal, cTerminal, A_effect_vec)
-environment.define_specifics(wind_vec, pit_vec, pit_prob, wall_vec, pit_punishment, backtrack_punishment, terminal_reward, [True, False, False])
+environment.define_specifics(wind_vec, pit_vec, pit_prob, wall_vec, pit_punishment, backtrack_punishment, terminal_reward, [False, True, True])
 
 obs_ind = environment.get_observables_indices()
 
 critic = Critic(environment.nFeatures)
-critic.lambda0_w = 0.5
-critic.lambda0_w = critic.lambda0_w * np.ones((environment.nFeatures, 1))
-critic.lambda0_w[obs_ind[1][0]:obs_ind[1][1]] = 0
+critic.lambda0_w = 0
+#critic.lambda0_w = critic.lambda0_w * np.ones((environment.nFeatures, 1))
+#critic.lambda0_w[obs_ind[1][0]:obs_ind[1][1]] = 0
 
 actor = Actor(environment.nFeatures, environment.nA)
-actor.lambda0_theta = 0.5
-actor.lambda0_theta = actor.lambda0_theta * np.ones((environment.nFeatures, 1))
-actor.lambda0_theta[obs_ind[1][0]:obs_ind[1][1]] = 0
+actor.lambda0_theta = 0
+#actor.lambda0_theta = actor.lambda0_theta * np.ones((environment.nFeatures, 1))
+#actor.lambda0_theta[obs_ind[1][0]:obs_ind[1][1]] = 0
 
 max_episode_length = 1e3
 sim = Simulation(max_episode_length)
 
-critic, actor = sim.train(1e4, environment, critic, actor)
+critic, actor = sim.train(1e3, environment, critic, actor)
 route = sim.test(environment, actor)
 sim.plots(environment, critic, actor, route)
 
-environment.pit_prob = 0
+environment.pit_prob = 0.5
