@@ -265,6 +265,8 @@ class Simulation:
         self.ep_len = np.array([])
         iEpisode = 0
         t_ep = 0
+        saved_critic = critic
+        saved_actor = actor
         while iEpisode < nEpisodes:
             print(iEpisode, '. ', end='', sep='')
             print('(', environment.s_r, ', ', environment.s_c, '). ', end='', sep='')
@@ -278,9 +280,14 @@ class Simulation:
                 print('Episode failed.')
                 print('XXXXXXXXXXXXXXX')
                 print('XXXXXXXXXXXXXXX')
-                terminal = True
+                critic = saved_critic
+                actor = saved_actor
+                environment.init_episode()
             if terminal == True:
+                environment.init_episode()
                 self.ep_len = np.append(self.ep_len, t_ep)
+                saved_critic = critic
+                saved_actor = actor
                 t_ep = 0
                 iEpisode = iEpisode + 1
             feature_vec_new, allowed_actions_new = environment.state_to_features()
@@ -344,7 +351,7 @@ wind_vec = np.zeros((nC))
 #wind_vec[np.array([3, 4, 5, 6])] = 1
 pit_vec = np.array([])
 #pit_vec = np.array([[0, 4], [0, 5], [0, 6], [4, 4], [4, 5], [4, 6]])
-pit_prob = 0.125
+pit_prob = 0.525
 pit_punishment = -1
 backtrack_punishment = -1
 terminal_reward = 1
