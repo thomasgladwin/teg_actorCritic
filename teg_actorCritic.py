@@ -371,5 +371,3 @@ sim = Simulation(max_episode_length)
 critic, actor = sim.train(1e4, environment, critic, actor)
 route = sim.test(environment, actor)
 sim.plots(environment, critic, actor, route)
-
-environment.pit_prob = 0.5
