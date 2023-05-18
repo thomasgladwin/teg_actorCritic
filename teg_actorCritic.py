@@ -297,7 +297,7 @@ class Simulation:
         terminal = False
         route = np.array([environment.s_r, environment.s_c])
         t = 0
-        while not terminal:
+        while not terminal and t < self.max_episode_length:
             print(t, ': ', end='')
             feature_vec, allowed_actions = environment.state_to_features()
             a = actor.act_on_policy(feature_vec, allowed_actions=allowed_actions, error_free=True)
@@ -347,7 +347,7 @@ pit_vec = np.array([])
 pit_prob = 0.25
 pit_punishment = -1
 backtrack_punishment = -1
-terminal_reward = 1
+terminal_reward = 10
 wall_vec = np.array([])
 # wall_vec = np.array([[4, 4], [5, 4], [6, 4], [7, 4], [8, 4]]) # , [3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [8, 3], [9, 3]
 environment = Environment(nR, nC, rStart, cStart, rTerminal, cTerminal, A_effect_vec)
@@ -356,18 +356,18 @@ environment.define_specifics(wind_vec, pit_vec, pit_prob, wall_vec, pit_punishme
 obs_ind = environment.get_observables_indices()
 
 critic = Critic(environment.nFeatures)
-critic.lambda0_w = 0.0
+critic.lambda0_w = 0
 #critic.lambda0_w = critic.lambda0_w * np.ones((environment.nFeatures, 1))
 #critic.lambda0_w[obs_ind[1][0]:obs_ind[1][1]] = 0
 
 actor = Actor(environment.nFeatures, environment.nA)
-actor.lambda0_theta = 0.0
+actor.lambda0_theta = 0.5
 #actor.lambda0_theta = actor.lambda0_theta * np.ones((environment.nFeatures, 1))
 #actor.lambda0_theta[obs_ind[1][0]:obs_ind[1][1]] = 0
 
-max_episode_length = 1e3
+max_episode_length = 1e4
 sim = Simulation(max_episode_length)
 
-critic, actor = sim.train(5e2, environment, critic, actor)
+critic, actor = sim.train(1e4, environment, critic, actor)
 route = sim.test(environment, actor)
 sim.plots(environment, critic, actor, route)
