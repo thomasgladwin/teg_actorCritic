@@ -356,12 +356,12 @@ environment.define_specifics(wind_vec, pit_vec, pit_prob, wall_vec, pit_punishme
 obs_ind = environment.get_observables_indices()
 
 critic = Critic(environment.nFeatures)
-critic.lambda0_w = 0.5
+critic.lambda0_w = 0
 #critic.lambda0_w = critic.lambda0_w * np.ones((environment.nFeatures, 1))
 #critic.lambda0_w[obs_ind[1][0]:obs_ind[1][1]] = 0
 
 actor = Actor(environment.nFeatures, environment.nA)
-actor.lambda0_theta = 0.5
+actor.lambda0_theta = 0
 #actor.lambda0_theta = actor.lambda0_theta * np.ones((environment.nFeatures, 1))
 #actor.lambda0_theta[obs_ind[1][0]:obs_ind[1][1]] = 0
 
