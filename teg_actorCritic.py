@@ -344,7 +344,7 @@ wind_vec = np.zeros((nC))
 #wind_vec[np.array([3, 4, 5, 6])] = 1
 pit_vec = np.array([])
 #pit_vec = np.array([[0, 4], [0, 5], [0, 6], [4, 4], [4, 5], [4, 6]])
-pit_prob = 0.25
+pit_prob = 0.125
 pit_punishment = -1
 backtrack_punishment = -1
 terminal_reward = 1
@@ -356,7 +356,7 @@ environment.define_specifics(wind_vec, pit_vec, pit_prob, wall_vec, pit_punishme
 obs_ind = environment.get_observables_indices()
 
 critic = Critic(environment.nFeatures)
-critic.lambda0_w = 0
+critic.lambda0_w = 0.5
 #critic.lambda0_w = critic.lambda0_w * np.ones((environment.nFeatures, 1))
 #critic.lambda0_w[obs_ind[1][0]:obs_ind[1][1]] = 0
 
