@@ -92,7 +92,7 @@ class Environment:
                 r = self.s_r + dr
                 c = self.s_c + dc
                 if r >= 0 and r < self.nR and c >= 0 and c < self.nC:
-                    if self.f_pit() and self.pit_map[self.memory[-1][0], self.memory[-1][1]] == 1:
+                    if self.f_pit() and self.pit_map[r, c] == 1:
                         X[idr, idc] = 1
         X = X.reshape(np.prod(X.shape)).copy()
         return X
@@ -208,7 +208,7 @@ class Critic:
         return self.delta0
 
 class Actor:
-    def __init__(self, nFeatures, nA, action_error_prob=0):
+    def __init__(self, nFeatures, nA, action_error_prob=0.1):
         self.nFeatures = nFeatures
         self.nA = nA
         self.action_error_prob = action_error_prob
@@ -222,7 +222,7 @@ class Actor:
         prefs = np.exp(np.dot(np.transpose(feature_vec), self.theta0) - c)
         prob = prefs[0][b] / np.sum(prefs)
         return prob
-    def act_on_policy(self, feature_vec, allowed_actions=[], error_free=True):
+    def act_on_policy(self, feature_vec, allowed_actions=[], error_free=False):
         if len(allowed_actions) == 0:
             allowed_actions = np.array(range(self.nA))
         allowed_actions = allowed_actions.astype(int)
@@ -267,6 +267,7 @@ class Simulation:
         t_ep = 0
         saved_critic = critic
         saved_actor = actor
+        safe_to_save = False
         while iEpisode < nEpisodes:
             print(iEpisode, '. ', end='', sep='')
             print('(', environment.s_r, ', ', environment.s_c, '). ', end='', sep='')
@@ -286,8 +287,12 @@ class Simulation:
             if terminal == True:
                 environment.init_episode()
                 self.ep_len = np.append(self.ep_len, t_ep)
-                saved_critic = critic
-                saved_actor = actor
+                if safe_to_save == False:
+                    safe_to_save = True
+                else:
+                    saved_critic = critic
+                    saved_actor = actor
+                    safe_to_save = False
                 t_ep = 0
                 iEpisode = iEpisode + 1
             feature_vec_new, allowed_actions_new = environment.state_to_features()
@@ -345,13 +350,13 @@ rStart = np.nan; cStart = np.nan;
 #rTerminal = 3; cTerminal = 7
 rTerminal = np.nan; cTerminal = np.nan
 #rTerminal = 7; cTerminal = 7
-#A_effect_vec = [[0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1]]
-A_effect_vec = [[0, 1], [0, -1], [1, 0], [-1, 0]]
+A_effect_vec = [[0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1]]
+#A_effect_vec = [[0, 1], [0, -1], [1, 0], [-1, 0]]
 wind_vec = np.zeros((nC))
 #wind_vec[np.array([3, 4, 5, 6])] = 1
 pit_vec = np.array([])
 #pit_vec = np.array([[0, 4], [0, 5], [0, 6], [4, 4], [4, 5], [4, 6]])
-pit_prob = 0.125
+pit_prob = 0.25
 pit_punishment = -1
 backtrack_punishment = -1
 terminal_reward = 1
