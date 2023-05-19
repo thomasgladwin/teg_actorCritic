@@ -19,7 +19,7 @@ class Environment:
         self.rTerm = rTerm
         self.cTerm = cTerm
         self.mem_length = 2 # Avoid loops (exclude actions or punish? Punish affects mean r)
-        self.memory = []
+        self.memory = [(np.nan, np.nan)]
     def define_specifics(self, wind_vec, pit_vec, pit_prob=0.0, wall_vec=np.array([]), pit_punishment=-1, backtrack_punishment=-1, terminal_reward=0, observable_features=[True, False, False]):
         self.wind_vec = wind_vec
         self.pit_vec = pit_vec
@@ -44,11 +44,10 @@ class Environment:
                 self.rTerm = np.random.randint(0, self.nR)
             if np.isnan(self.cTerm0):
                 self.cTerm = np.random.randint(0, self.nC)
-            if False:
-                if np.isnan(self.rStart):
-                    self.s_r = np.random.randint(0, self.nR)
-                if np.isnan(self.cStart):
-                    self.s_c = np.random.randint(0, self.nC)
+            if np.isnan(self.rStart):
+                self.s_r = np.random.randint(0, self.nR)
+            if np.isnan(self.cStart):
+                self.s_c = np.random.randint(0, self.nC)
             if self.s_r != self.rTerm or self.s_c != self.cTerm:
                 break
         # Make pits: pre-set and random
@@ -92,7 +91,7 @@ class Environment:
                 r = self.s_r + dr
                 c = self.s_c + dc
                 if r >= 0 and r < self.nR and c >= 0 and c < self.nC:
-                    if self.f_pit() and self.pit_map[r, c] == 1:
+                    if self.pit_map[r, c] == 1:
                         X[idr, idc] = 1
         X = X.reshape(np.prod(X.shape)).copy()
         return X
@@ -199,9 +198,12 @@ class Critic:
         return np.sum(feature_vec * self.w)
     def delta_v(self, feature_vec):
         return feature_vec
-    def update(self, r, feature_vec, feature_vec_new):
-        self.delta0 = r - self.mean_r + self.get_v(feature_vec_new) - self.get_v(feature_vec)
-        self.mean_r = self.mean_r + self.alpha0_mean_r * self.delta0
+    def update(self, r, feature_vec, feature_vec_new, terminal):
+        if not terminal:
+            self.delta0 = r - self.mean_r + self.get_v(feature_vec_new) - self.get_v(feature_vec)
+            self.mean_r = self.mean_r + self.alpha0_mean_r * self.delta0
+        else:
+            self.delta0 = r - self.mean_r
         self.z_w = self.lambda0_w * self.z_w + self.delta_v(feature_vec)
         self.w = self.w + self.alpha0_w * self.delta0 * self.z_w
     def get_delta(self):
@@ -214,7 +216,7 @@ class Actor:
         self.action_error_prob = action_error_prob
         self.theta0 = np.zeros((self.nFeatures, self.nA))
         self.z_theta = np.zeros((self.nFeatures, self.nA))
-        self.alpha0_theta = 0.1
+        self.alpha0_theta = 0.001
         self.lambda0_theta = 0.5
         self.a = 0
     def policy_prob(self, feature_vec, b):
@@ -242,10 +244,10 @@ class Actor:
         return self.a
     def delta_ln_pi(self, feature_vec, allowed_actions):
         term1 = np.zeros((self.nFeatures, self.nA))
-        iStates = np.where(feature_vec == 1)[0] # [0]
+        iStates = np.where(feature_vec == 1)[0]
         term1[iStates, self.a] = 1
         term2 = np.zeros((self.nFeatures, self.nA))
-        for b in range(self.nA): # allowed_actions:
+        for b in range(self.nA):
             tmp = np.zeros((self.nFeatures, self.nA))
             tmp[iStates, b] = 1
             term2 = term2 + self.policy_prob(feature_vec, b) * tmp
@@ -274,7 +276,14 @@ class Simulation:
             feature_vec, allowed_actions = environment.state_to_features()
             a = actor.act_on_policy(feature_vec, allowed_actions=allowed_actions)
             r, terminal = environment.respond_to_action(a)
+            feature_vec_new, allowed_actions_new = environment.state_to_features()
+            critic.update(r, feature_vec, feature_vec_new, terminal)
+            delta0 = critic.get_delta()
+            # delta0 = delta0 + np.log(1 + t_ep)/(np.log(1 + t_ep) + np.log(1 + 100))
+            actor.update(delta0, feature_vec, allowed_actions)
             print('a = ', a, '. r = ', r, '. ', end='', sep='')
+            print('delta0 = ', delta0, '. ', end='', sep='')
+            print()
             if t_ep > self.max_episode_length:
                 print('XXXXXXXXXXXXXXX')
                 print('XXXXXXXXXXXXXXX')
@@ -295,13 +304,6 @@ class Simulation:
                     safe_to_save = False
                 t_ep = 0
                 iEpisode = iEpisode + 1
-            feature_vec_new, allowed_actions_new = environment.state_to_features()
-            critic.update(r, feature_vec, feature_vec_new)
-            delta0 = critic.get_delta()
-            # delta0 = delta0 + np.log(1 + t_ep)/(np.log(1 + t_ep) + np.log(1 + 100))
-            print('delta0 = ', delta0, '. ', end='', sep='')
-            print()
-            actor.update(delta0, feature_vec, allowed_actions)
             t_ep = t_ep + 1
         return (critic, actor)
     def test(self, environment, actor):
@@ -350,8 +352,8 @@ rStart = np.nan; cStart = np.nan;
 #rTerminal = 3; cTerminal = 7
 rTerminal = np.nan; cTerminal = np.nan
 #rTerminal = 7; cTerminal = 7
-A_effect_vec = [[0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1]]
-#A_effect_vec = [[0, 1], [0, -1], [1, 0], [-1, 0]]
+#A_effect_vec = [[0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1]]
+A_effect_vec = [[0, 1], [0, -1], [1, 0], [-1, 0]]
 wind_vec = np.zeros((nC))
 #wind_vec[np.array([3, 4, 5, 6])] = 1
 pit_vec = np.array([])
@@ -368,12 +370,12 @@ environment.define_specifics(wind_vec, pit_vec, pit_prob, wall_vec, pit_punishme
 obs_ind = environment.get_observables_indices()
 
 critic = Critic(environment.nFeatures)
-critic.lambda0_w = 0
+critic.lambda0_w = 0.5
 #critic.lambda0_w = critic.lambda0_w * np.ones((environment.nFeatures, 1))
 #critic.lambda0_w[obs_ind[1][0]:obs_ind[1][1]] = 0
 
 actor = Actor(environment.nFeatures, environment.nA)
-actor.lambda0_theta = 0
+actor.lambda0_theta = 0.5
 #actor.lambda0_theta = actor.lambda0_theta * np.ones((environment.nFeatures, 1))
 #actor.lambda0_theta[obs_ind[1][0]:obs_ind[1][1]] = 0
 
