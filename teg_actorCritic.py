@@ -224,7 +224,7 @@ class Actor:
         prefs = np.exp(np.dot(np.transpose(feature_vec), self.theta0) - c)
         prob = prefs[0][b] / np.sum(prefs)
         return prob
-    def act_on_policy(self, feature_vec, allowed_actions=[], error_free=False):
+    def act_on_policy(self, feature_vec, allowed_actions=[], error_free=True):
         if len(allowed_actions) == 0:
             allowed_actions = np.array(range(self.nA))
         allowed_actions = allowed_actions.astype(int)
@@ -352,8 +352,8 @@ rStart = np.nan; cStart = np.nan;
 #rTerminal = 3; cTerminal = 7
 rTerminal = np.nan; cTerminal = np.nan
 #rTerminal = 7; cTerminal = 7
-#A_effect_vec = [[0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1]]
-A_effect_vec = [[0, 1], [0, -1], [1, 0], [-1, 0]]
+A_effect_vec = [[0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1]]
+#A_effect_vec = [[0, 1], [0, -1], [1, 0], [-1, 0]]
 wind_vec = np.zeros((nC))
 #wind_vec[np.array([3, 4, 5, 6])] = 1
 pit_vec = np.array([])
@@ -382,6 +382,6 @@ actor.lambda0_theta = 0.5
 max_episode_length = 1e4
 sim = Simulation(max_episode_length)
 
-critic, actor = sim.train(1e4, environment, critic, actor)
+critic, actor = sim.train(1e5, environment, critic, actor)
 route = sim.test(environment, actor)
 sim.plots(environment, critic, actor, route)
