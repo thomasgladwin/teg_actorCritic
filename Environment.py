@@ -14,7 +14,7 @@ class Environment:
         self.cTerm0 = cTerm
         self.rTerm = rTerm
         self.cTerm = cTerm
-        self.mem_length = self.nR * self.nC # Avoid loops (exclude actions or punish? Punish affects mean r)
+        self.mem_length = 2 # self.nR * self.nC # Avoid loops (exclude actions or punish? Punish affects mean r)
         self.memory = []
     def define_specifics(self, wind_vec, pit_vec, pit_prob=0.0, wall_vec=np.array([]), pit_punishment=-1, backtrack_punishment=-1, terminal_reward=0, observable_features=[True, False, False]):
         self.wind_vec = wind_vec
@@ -106,21 +106,21 @@ class Environment:
                 X[1,2] = 1
         else:
             X = []
+            dr = 0
+            if self.s_r - self.rTerm > 0:
+                dr = 1
+            elif self.s_r - self.rTerm < 0:
+                dr = -1
+            dc = 0
+            if self.s_c - self.cTerm > 0:
+                dc = 1
+            elif self.s_c - self.cTerm < 0:
+                dc = -1
             for r in range(-1, 2):
                 for c in range(-1, 2):
-                    dr = 0
-                    if self.s_r - self.rTerm > 0:
-                        dr = 1
-                    elif self.s_r - self.rTerm < 0:
-                        dr = -1
-                    dc = 0
-                    if self.s_c - self.cTerm > 0:
-                        dc = 1
-                    elif self.s_c - self.cTerm < 0:
-                        dc = -1
-                    if r == dr and c == dc:
+                     if r == dr and c == dc:
                         X.append(1)
-                    else:
+                     else:
                         X.append(0)
             X = np.array(X)
         X = X.reshape(np.prod(X.shape)).copy()
@@ -131,7 +131,7 @@ class Environment:
         c = b
         d = b + 9
         e = d
-        f = e + 6
+        f = e + 9
         obs_ind = [(a, b), (c, d), (e, f)]
         return obs_ind
     def state_to_features(self):

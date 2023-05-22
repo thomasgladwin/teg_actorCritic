@@ -11,7 +11,7 @@ class Critic:
     def __init__(self, nFeatures):
         self.w = np.zeros((nFeatures, 1))
         self.z = np.zeros((nFeatures, 1))
-        self.alpha0 = 0.001 # Too high causes weights to blow up
+        self.alpha0 = 0.1
         self.lambda0 = 0.5
     def get_v(self, feature_vec):
         return np.sum(feature_vec * self.w)
@@ -160,56 +160,59 @@ class Simulation:
         route = route.reshape(int(len(route)/2), 2)
         return route
     def plots(self, environment, agent, route):
-        W = agent.critic.w[:(environment.nR * environment.nC)].reshape((environment.nR, environment.nC))
-        a = environment.nR * environment.nC
-        b = a + 9
-        W_local = np.max(agent.critic.w[a:b], axis=1).reshape(3, 3)
-        a = environment.nR * environment.nC + 9 - 0
-        b = a + 6 + 0
-        figs, ax = plt.subplots(4, 1)
-        ax[0].plot(self.ep_len)
-        ax[1].pcolormesh(W)
-        ax[2].pcolormesh(environment.pit_map + environment.wall_map * 2)
+        obs_ind = environment.get_observables_indices()
+        W = agent.critic.w[obs_ind[0][0]:obs_ind[0][1]].reshape((environment.nR, environment.nC))
+        W_local = np.max(agent.critic.w[obs_ind[1][0]:obs_ind[1][1]], axis=1).reshape(3, 3)
+        W_goal = np.max(agent.critic.w[obs_ind[2][0]:obs_ind[2][1]], axis=1).reshape(3, 3)
+        T_local = agent.actor.theta0[obs_ind[1][0]:obs_ind[1][1], :]
+        T_goal = agent.actor.theta0[obs_ind[2][0]:obs_ind[2][1], :]
+        figs, ax = plt.subplots(4, 2)
+        ax[0, 0].plot(self.ep_len)
+        ax[1, 0].pcolormesh(W)
+        ax[2, 0].pcolormesh(W_local)
+        ax[3, 0].pcolormesh(W_goal)
+        ax[0, 1].pcolormesh(environment.pit_map + environment.wall_map * 2)
         if len(route) > 0:
-            ax[2].scatter(route[:, 1] + 0.5, route[:, 0] + 0.5)
-            ax[2].plot(route[:, 1] + 0.5, route[:, 0] + 0.5)
-            ax[2].xaxis.set_ticks(ticks=np.array([range(environment.nC)]).reshape(environment.nC) + 0.5, labels=np.array([range(environment.nC)]).reshape(environment.nC))
-            ax[2].yaxis.set_ticks(ticks=np.array([range(environment.nR)]).reshape(environment.nR) + 0.5, labels=np.array([range(environment.nR)]).reshape(environment.nR))
-        ax[3].pcolormesh(W_local)
+            ax[0, 1].scatter(route[:, 1] + 0.5, route[:, 0] + 0.5)
+            ax[0, 1].plot(route[:, 1] + 0.5, route[:, 0] + 0.5)
+            ax[0, 1].xaxis.set_ticks(ticks=np.array([range(environment.nC)]).reshape(environment.nC) + 0.5, labels=np.array([range(environment.nC)]).reshape(environment.nC))
+            ax[0, 1].yaxis.set_ticks(ticks=np.array([range(environment.nR)]).reshape(environment.nR) + 0.5, labels=np.array([range(environment.nR)]).reshape(environment.nR))
+        ax[2,1].pcolormesh(T_local)
+        ax[3,1].pcolormesh(T_goal)
         plt.show()
 
 # Inits
-nR = 9; nC = 9;
-#rStart = 0; cStart = 3;
-rStart = np.nan; cStart = np.nan;
-#rTerminal = 3; cTerminal = 7
-rTerminal = np.nan; cTerminal = np.nan
+nR = 7; nC = 9;
+rStart = 0; cStart = 1;
+#rStart = np.nan; cStart = np.nan;
+rTerminal = 3; cTerminal = 7
+#rTerminal = np.nan; cTerminal = np.nan
 #rTerminal = 7; cTerminal = 7
-#A_effect_vec = [[0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1]]
-A_effect_vec = [[0, 1], [0, -1],[1, 0], [-1, 0]]
+A_effect_vec = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 0], [0, 1], [1, -1], [1, 0], [1, 1]]
+#A_effect_vec = [[0, 1], [0, -1],[1, 0], [-1, 0]]
 wind_vec = np.zeros((nC))
 #wind_vec[np.array([3, 4, 5, 6])] = 1
 pit_vec = np.array([])
 #pit_vec = np.array([[0, 4], [0, 5], [0, 6], [4, 4], [4, 5], [4, 6]])
-pit_prob = 0.2
+pit_prob = 0.0
 pit_punishment = -1
-backtrack_punishment = -1
+backtrack_punishment = 0
 terminal_reward = 0
 wall_vec = np.array([])
 # wall_vec = np.array([[4, 4], [5, 4], [6, 4], [7, 4], [8, 4]]) # , [3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [8, 3], [9, 3]
-environment = Environment.Environment(nR, nC, rStart, cStart, rTerminal, cTerminal, A_effect_vec)
-environment.define_specifics(wind_vec, pit_vec, pit_prob, wall_vec, pit_punishment, backtrack_punishment, terminal_reward, [False, True, True])
 
-obs_ind = environment.get_observables_indices()
+environment = Environment.Environment(nR, nC, rStart, cStart, rTerminal, cTerminal, A_effect_vec)
+environment.define_specifics(wind_vec, pit_vec, pit_prob, wall_vec, pit_punishment, backtrack_punishment, terminal_reward, [True, False, False])
+environment.mem_length = 2
 
 agent = ActorCritic(environment.nFeatures, environment.nA)
-agent.critic.lamba0 = 0
-agent.actor.lamba0 = 0
+agent.critic.lamba0 = 0.5
+agent.actor.lamba0 = 0.5
 
 max_episode_length = 1e6
 sim = Simulation(max_episode_length)
 
-agent = sim.train(1e4, environment, agent)
+agent = sim.train(5e3, environment, agent)
 route = sim.test(environment, agent)
 sim.plots(environment, agent, route)
 
