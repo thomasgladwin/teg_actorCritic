@@ -14,7 +14,7 @@ class Environment:
         self.cTerm0 = cTerm
         self.rTerm = rTerm
         self.cTerm = cTerm
-        self.mem_length = 4 # Avoid loops (exclude actions or punish? Punish affects mean r)
+        self.mem_length = self.nR * self.nC # Avoid loops (exclude actions or punish? Punish affects mean r)
         self.memory = []
     def define_specifics(self, wind_vec, pit_vec, pit_prob=0.0, wall_vec=np.array([]), pit_punishment=-1, backtrack_punishment=-1, terminal_reward=0, observable_features=[True, False, False]):
         self.wind_vec = wind_vec
@@ -111,12 +111,12 @@ class Environment:
                     dr = 0
                     if self.s_r - self.rTerm > 0:
                         dr = 1
-                    else:
+                    elif self.s_r - self.rTerm < 0:
                         dr = -1
                     dc = 0
                     if self.s_c - self.cTerm > 0:
                         dc = 1
-                    else:
+                    elif self.s_c - self.cTerm < 0:
                         dc = -1
                     if r == dr and c == dc:
                         X.append(1)
