@@ -14,7 +14,7 @@ class Environment:
         self.cTerm0 = cTerm
         self.rTerm = rTerm
         self.cTerm = cTerm
-        self.mem_length = 2 # Avoid loops (exclude actions or punish? Punish affects mean r)
+        self.mem_length = 4 # Avoid loops (exclude actions or punish? Punish affects mean r)
         self.memory = []
     def define_specifics(self, wind_vec, pit_vec, pit_prob=0.0, wall_vec=np.array([]), pit_punishment=-1, backtrack_punishment=-1, terminal_reward=0, observable_features=[True, False, False]):
         self.wind_vec = wind_vec
@@ -153,7 +153,7 @@ class Environment:
             new_s_r = self.s_r + self.A_effect_vec[a][0]
             new_s_c = self.s_c + self.A_effect_vec[a][1]
             if (new_s_r >= 0 and new_s_r < self.nR) and (new_s_c >= 0 and new_s_c < self.nC) and not self.f_into_wall(new_s_r, new_s_c):
-                if self.backtrack_punishment >= 0 or (not (new_s_r, new_s_c) in self.memory):
+                if not (new_s_r, new_s_c) in self.memory:
                     allowed_actions = np.append(allowed_actions, a)
         return X, allowed_actions
     def respond_to_action(self, a):
