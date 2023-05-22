@@ -15,18 +15,18 @@ class SARSA:
         self.alpha0 = 0.1
         self.lambda0 = 0.5
         self.gamma0 = 0.5
-        self.action_error_prob = 0.05
+        self.action_error_prob = 0.1
     def init_episode(self):
         self.z = 0 * self.z
     def update(self, a, r, feature_vec, feature_vec_new, terminal):
         # Feature vec contains indicators
-        q = np.dot(feature_vec, self.w[:, a])
+        q = np.dot(feature_vec[:,0], self.w[:, a])
         if terminal == False:
-            q_new = np.dot(feature_vec_new, self.w[:, a])
+            q_new = np.dot(feature_vec_new[:,0], self.w[:, a])
         else:
             q_new = 0
         self.delta0 = r + self.gamma0 * q_new - q
-        self.z[:, a] = self.gamma0 * self.lambda0 * self.z[:, a] + feature_vec
+        self.z[:, a] = self.gamma0 * self.lambda0 * self.z[:, a] + feature_vec[:,0]
         self.w[:, a] = self.w[:, a] + self.alpha0 * self.delta0 * self.z[:, a]
     def act_on_policy(self, feature_vec, allowed_actions=[], error_free=False):
         if len(allowed_actions) == 0:
@@ -38,7 +38,7 @@ class SARSA:
         else:
             sa_q = np.array([])
             for b in allowed_actions:
-                q = np.dot(feature_vec, self.w[:, b])
+                q = np.dot(feature_vec[:,0], self.w[:, b])
                 sa_q = np.append(sa_q, q)
             self.a = allowed_actions[np.argmax(sa_q)]
         return self.a
@@ -61,9 +61,9 @@ class Simulation:
             print(allowed_actions, '. ', sep='', end='')
             a = sarsa.act_on_policy(feature_vec, allowed_actions=allowed_actions)
             r, terminal = environment.respond_to_action(a)
+            print('a = ', a, '. r = ', r, '. ', end='\n', sep='')
             feature_vec_new, allowed_actions_new = environment.state_to_features()
             sarsa.update(a, r, feature_vec, feature_vec_new, terminal)
-            print('a = ', a, '. r = ', r, '. ', end='\n', sep='')
             if t_ep > self.max_episode_length:
                 print('XXXXXXXXXXXXXXX')
                 print('XXXXXXXXXXXXXXX')
@@ -116,10 +116,10 @@ class Simulation:
 
 # Inits
 nR = 9; nC = 9;
-#rStart = 0; cStart = 3;
-rStart = np.nan; cStart = np.nan;
-#rTerminal = 3; cTerminal = 7
-rTerminal = np.nan; cTerminal = np.nan
+rStart = 1; cStart = 3;
+#rStart = np.nan; cStart = np.nan;
+rTerminal = 3; cTerminal = 7
+#rTerminal = np.nan; cTerminal = np.nan
 #rTerminal = 7; cTerminal = 7
 #A_effect_vec = [[0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1]]
 A_effect_vec = [[0, 1], [0, -1],[1, 0], [-1, 0]]
@@ -127,24 +127,25 @@ wind_vec = np.zeros((nC))
 #wind_vec[np.array([3, 4, 5, 6])] = 1
 pit_vec = np.array([])
 #pit_vec = np.array([[0, 4], [0, 5], [0, 6], [4, 4], [4, 5], [4, 6]])
-pit_prob = 0.25
+pit_prob = 0.0
 pit_punishment = -1
-backtrack_punishment = -1
+backtrack_punishment = 0
+off_grid_punishment = -1
 terminal_reward = 0
 wall_vec = np.array([])
 # wall_vec = np.array([[4, 4], [5, 4], [6, 4], [7, 4], [8, 4]]) # , [3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [8, 3], [9, 3]
-environment = Environment(nR, nC, rStart, cStart, rTerminal, cTerminal, A_effect_vec)
-environment.define_specifics(wind_vec, pit_vec, pit_prob, wall_vec, pit_punishment, backtrack_punishment, terminal_reward, [False, True, True])
+environment = Environment.Environment(nR, nC, rStart, cStart, rTerminal, cTerminal, A_effect_vec)
+environment.define_specifics(wind_vec, pit_vec, pit_prob, wall_vec, pit_punishment, backtrack_punishment, off_grid_punishment, terminal_reward, [True, False, False])
 
 obs_ind = environment.get_observables_indices()
 
 sarsa = SARSA(environment.nFeatures, environment.nA)
-sarsa.lambda0 = 0
+sarsa.lambda0 = 0.5
 
 max_episode_length = 1e6
 sim = Simulation(max_episode_length)
 
-sarsa = sim.train(1e5, environment, sarsa)
+sarsa = sim.train(1e4, environment, sarsa)
 route = sim.test(environment, sarsa)
 sim.plots(environment, sarsa, route)
 

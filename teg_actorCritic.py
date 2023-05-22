@@ -197,12 +197,13 @@ pit_vec = np.array([])
 pit_prob = 0.0
 pit_punishment = -1
 backtrack_punishment = 0
+off_grid_punishment = -1
 terminal_reward = 0
 wall_vec = np.array([])
 # wall_vec = np.array([[4, 4], [5, 4], [6, 4], [7, 4], [8, 4]]) # , [3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [8, 3], [9, 3]
 
 environment = Environment.Environment(nR, nC, rStart, cStart, rTerminal, cTerminal, A_effect_vec)
-environment.define_specifics(wind_vec, pit_vec, pit_prob, wall_vec, pit_punishment, backtrack_punishment, terminal_reward, [True, False, False])
+environment.define_specifics(wind_vec, pit_vec, pit_prob, wall_vec, pit_punishment, backtrack_punishment, off_grid_punishment, terminal_reward, [True, False, False])
 environment.mem_length = 2
 
 agent = ActorCritic(environment.nFeatures, environment.nA)

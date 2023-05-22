@@ -14,9 +14,9 @@ class Environment:
         self.cTerm0 = cTerm
         self.rTerm = rTerm
         self.cTerm = cTerm
-        self.mem_length = 2 # self.nR * self.nC # Avoid loops (exclude actions or punish? Punish affects mean r)
+        self.mem_length = 9 # self.nR * self.nC # Avoid loops (exclude actions or punish? Punish affects mean r)
         self.memory = []
-    def define_specifics(self, wind_vec, pit_vec, pit_prob=0.0, wall_vec=np.array([]), pit_punishment=-1, backtrack_punishment=-1, terminal_reward=0, observable_features=[True, False, False]):
+    def define_specifics(self, wind_vec, pit_vec, pit_prob=0.0, wall_vec=np.array([]), pit_punishment=-1, backtrack_punishment=-1, off_grid_punishment=-1, terminal_reward=0, observable_features=[True, False, False]):
         self.wind_vec = wind_vec
         self.pit_vec = pit_vec
         self.pit_map = np.zeros((self.nR, self.nC))
@@ -26,6 +26,7 @@ class Environment:
             self.wall_map[wall_vec[i_wall][0]][wall_vec[i_wall][1]] = 1
         self.pit_punishment = pit_punishment
         self.backtrack_punishment = backtrack_punishment
+        self.off_grid_punishment = off_grid_punishment
         self.terminal_reward = terminal_reward
         self.observable_features = observable_features # Coordinates, local pits, goal direction
         feature_vec, allowed_actions = self.state_to_features()
@@ -157,10 +158,17 @@ class Environment:
                     allowed_actions = np.append(allowed_actions, a)
         return X, allowed_actions
     def respond_to_action(self, a):
+        off_grid = False
         new_s_r = self.s_r + self.A_effect_vec[a][0]
         new_s_c = self.s_c + self.A_effect_vec[a][1]
+        if new_s_c < 0 or new_s_c >= self.nC:
+            print('C OFF GRID')
+            off_grid = True
         new_s_c = np.min([self.nC - 1, np.max([0, new_s_c])])
         new_s_r = int(new_s_r + self.wind_vec[new_s_c])
+        if new_s_r < 0 or new_s_r >= self.nR:
+            print('R OFF GRID')
+            off_grid = True
         s_r_mem = self.s_r
         s_c_mem = self.s_c
         self.s_r = np.min([self.nR - 1, np.max([0, new_s_r])])
@@ -171,6 +179,9 @@ class Environment:
             r = self.terminal_reward
             terminal = True
         else:
+            if off_grid:
+                # terminal = True # Does entering a pit end the episode?
+                r = r + self.off_grid_punishment
             if self.f_pit():
                 # terminal = True # Does entering a pit end the episode?
                 r = r + self.pit_punishment
