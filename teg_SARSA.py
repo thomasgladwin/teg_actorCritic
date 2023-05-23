@@ -116,10 +116,10 @@ class Simulation:
 
 # Inits
 nR = 9; nC = 9;
-rStart = 1; cStart = 3;
-#rStart = np.nan; cStart = np.nan;
-rTerminal = 3; cTerminal = 7
-#rTerminal = np.nan; cTerminal = np.nan
+#rStart = 1; cStart = 3;
+rStart = np.nan; cStart = np.nan;
+#rTerminal = 3; cTerminal = 7
+rTerminal = np.nan; cTerminal = np.nan
 #rTerminal = 7; cTerminal = 7
 #A_effect_vec = [[0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1]]
 A_effect_vec = [[0, 1], [0, -1],[1, 0], [-1, 0]]
@@ -127,7 +127,7 @@ wind_vec = np.zeros((nC))
 #wind_vec[np.array([3, 4, 5, 6])] = 1
 pit_vec = np.array([])
 #pit_vec = np.array([[0, 4], [0, 5], [0, 6], [4, 4], [4, 5], [4, 6]])
-pit_prob = 0.0
+pit_prob = 0.2
 pit_punishment = -1
 backtrack_punishment = 0
 off_grid_punishment = -1
@@ -135,17 +135,17 @@ terminal_reward = 0
 wall_vec = np.array([])
 # wall_vec = np.array([[4, 4], [5, 4], [6, 4], [7, 4], [8, 4]]) # , [3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [8, 3], [9, 3]
 environment = Environment.Environment(nR, nC, rStart, cStart, rTerminal, cTerminal, A_effect_vec)
-environment.define_specifics(wind_vec, pit_vec, pit_prob, wall_vec, pit_punishment, backtrack_punishment, off_grid_punishment, terminal_reward, [True, False, False])
+environment.define_specifics(wind_vec, pit_vec, pit_prob, wall_vec, pit_punishment, backtrack_punishment, off_grid_punishment, terminal_reward, [False, True, True])
 
 obs_ind = environment.get_observables_indices()
 
 sarsa = SARSA(environment.nFeatures, environment.nA)
-sarsa.lambda0 = 0.5
+sarsa.lambda0 = 0.0
 
 max_episode_length = 1e6
 sim = Simulation(max_episode_length)
 
-sarsa = sim.train(1e4, environment, sarsa)
+sarsa = sim.train(1e6, environment, sarsa)
 route = sim.test(environment, sarsa)
 sim.plots(environment, sarsa, route)
 
