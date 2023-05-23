@@ -95,7 +95,7 @@ class Actor:
         return term1 - term2
     def update(self, delta0, feature_vec):
         delta_this = self.delta_ln_pi(feature_vec)
-        self.z = self.lambda0 * self.z + self.I * delta_this
+        self.z = self.gamma0 * self.lambda0 * self.z + self.I * delta_this
         self.theta0 = self.theta0 + self.alpha0 * delta0 * self.z
         self.I = self.I * self.gamma0
 
