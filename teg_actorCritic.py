@@ -13,15 +13,16 @@ class Critic:
         self.z = np.zeros((nFeatures, 1))
         self.alpha0 = 0.1
         self.lambda0 = 0.5
+        self.gamma0 = 0.1
     def get_v(self, feature_vec):
         return np.sum(feature_vec * self.w)
     def delta_v(self, feature_vec):
         return feature_vec
     def update(self, r, feature_vec, feature_vec_new, terminal):
         if not terminal:
-            self.delta0 = r + self.get_v(feature_vec_new) - self.get_v(feature_vec)
+            self.delta0 = r + self.gamma0 * self.get_v(feature_vec_new) - self.get_v(feature_vec)
         else:
-            self.delta0 = r
+            self.delta0 = r - self.get_v(feature_vec)
         self.z = self.lambda0 * self.z + self.delta_v(feature_vec)
         self.w = self.w + self.alpha0 * self.delta0 * self.z
     def get_delta(self):
@@ -36,6 +37,8 @@ class Actor:
         self.z = np.zeros((self.nFeatures, self.nA))
         self.alpha0 = 0.5 # 0.1
         self.lambda0 = 0.5
+        self.gamma0 = 0.5
+        self.I = 1
         self.a = 0
     def policy_prob(self, feature_vec, b):
         c = np.max(np.dot(np.transpose(feature_vec), self.theta0))
@@ -92,8 +95,9 @@ class Actor:
         return term1 - term2
     def update(self, delta0, feature_vec):
         delta_this = self.delta_ln_pi(feature_vec)
-        self.z = self.lambda0 * self.z + delta_this
+        self.z = self.lambda0 * self.z + self.I * delta_this
         self.theta0 = self.theta0 + self.alpha0 * delta0 * self.z
+        self.I = self.I * self.gamma0
 
 class ActorCritic:
     def __init__(self, nFeatures, nA):
@@ -102,6 +106,7 @@ class ActorCritic:
     def init_episode(self):
         self.critic.z = 0 * self.critic.z
         self.actor.z = 0 * self.actor.z
+        self.actor.I = 1
 
 class Simulation:
     def __init__(self, max_episode_length):
@@ -119,7 +124,7 @@ class Simulation:
             print('(', environment.s_r, ', ', environment.s_c, '). ', end='', sep='')
             feature_vec, allowed_actions = environment.state_to_features()
             print(allowed_actions, '. ', sep='', end='')
-            a = agent.actor.act_on_policy(feature_vec, allowed_actions=allowed_actions)
+            a = agent.actor.act_on_policy(feature_vec, allowed_actions=allowed_actions, error_free=False)
             r, terminal = environment.respond_to_action(a)
             feature_vec_new, allowed_actions_new = environment.state_to_features()
             agent.critic.update(r, feature_vec, feature_vec_new, terminal)
@@ -183,10 +188,10 @@ class Simulation:
 
 # Inits
 nR = 7; nC = 9;
-rStart = 0; cStart = 1;
-#rStart = np.nan; cStart = np.nan;
-rTerminal = 3; cTerminal = 7
-#rTerminal = np.nan; cTerminal = np.nan
+#rStart = 0; cStart = 1;
+rStart = np.nan; cStart = np.nan;
+#rTerminal = 3; cTerminal = 7
+rTerminal = np.nan; cTerminal = np.nan
 #rTerminal = 7; cTerminal = 7
 A_effect_vec = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 0], [0, 1], [1, -1], [1, 0], [1, 1]]
 #A_effect_vec = [[0, 1], [0, -1],[1, 0], [-1, 0]]
@@ -194,7 +199,7 @@ wind_vec = np.zeros((nC))
 #wind_vec[np.array([3, 4, 5, 6])] = 1
 pit_vec = np.array([])
 #pit_vec = np.array([[0, 4], [0, 5], [0, 6], [4, 4], [4, 5], [4, 6]])
-pit_prob = 0.0
+pit_prob = 0.2
 pit_punishment = -1
 backtrack_punishment = 0
 off_grid_punishment = -1
@@ -203,17 +208,17 @@ wall_vec = np.array([])
 # wall_vec = np.array([[4, 4], [5, 4], [6, 4], [7, 4], [8, 4]]) # , [3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [8, 3], [9, 3]
 
 environment = Environment.Environment(nR, nC, rStart, cStart, rTerminal, cTerminal, A_effect_vec)
-environment.define_specifics(wind_vec, pit_vec, pit_prob, wall_vec, pit_punishment, backtrack_punishment, off_grid_punishment, terminal_reward, [True, False, False])
+environment.define_specifics(wind_vec, pit_vec, pit_prob, wall_vec, pit_punishment, backtrack_punishment, off_grid_punishment, terminal_reward, [False, True, True])
 environment.mem_length = 2
 
 agent = ActorCritic(environment.nFeatures, environment.nA)
-agent.critic.lamba0 = 0.5
-agent.actor.lamba0 = 0.5
+agent.critic.lamba0 = 0
+agent.actor.lamba0 = 0
 
 max_episode_length = 1e6
 sim = Simulation(max_episode_length)
 
-agent = sim.train(5e3, environment, agent)
+agent = sim.train(1e4, environment, agent)
 route = sim.test(environment, agent)
 sim.plots(environment, agent, route)
 
