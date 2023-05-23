@@ -1,7 +1,7 @@
 # teg_actorCritic
 Actor-critic "GridWorld" toy model for reinforcement learning. Additionally, a SARSA(lambda) model and expansion of GridWorld with (random) negative-reward pits to avoid.
 
-Practice project for Sutton & Barto. The model has the most basic state-indicator binary parameterization for the actor's and critic's weights. The model uses continuous learning on reset-on-terminal-state episodes.
+Practice project for Sutton & Barto. The model has the most basic state-indicator binary parameterization for the actor's and critic's weights.
 
 The code uses three separate classes to make the separation of information between elements clear: the Environment (which responds to actions), the Critic (which receives rewards from the Environment and bootstrap-learns state-value functions) and the Actor (which receives Temporal Difference signals from the critic and bootstrap-learns state-action preferences). There's also a Simulation class for convenience.
 
