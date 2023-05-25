@@ -1,5 +1,5 @@
 # teg_actorCritic
-Actor-Critic reinforcement learning models with a toy environment.
+Actor-Critic reinforcement learning model with a toy environment.
 
 Practice project for Sutton & Barto. The model uses linear parameterizations for values and preferences. The code uses separate classes to make the separation of information between elements clear: the Environment (which responds to actions with state features and rewards), the Critic (which receives rewards and features from the Environment and bootstrap-learns state-value functions) and the Actor (which receives state features from the Environment and Temporal Difference signals from the critic and bootstrap-learns state-action preferences). There's also a Simulation class for convenience.
 
