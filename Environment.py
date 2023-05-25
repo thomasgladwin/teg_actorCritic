@@ -14,7 +14,8 @@ class Environment:
         self.cTerm0 = cTerm
         self.rTerm = rTerm
         self.cTerm = cTerm
-        self.mem_length = 9 # self.nR * self.nC # Avoid loops (exclude actions or punish? Punish affects mean r)
+        self.no_backtrack = False
+        self.mem_length = self.nR * self.nC # Avoid loops (exclude actions or punish? Punish affects mean r)
         self.memory = []
     def define_specifics(self, wind_vec, pit_vec, pit_prob=0.0, wall_vec=np.array([]), pit_punishment=-1, backtrack_punishment=-1, off_grid_punishment=-1, terminal_reward=0, observable_features=[True, False, False]):
         self.wind_vec = wind_vec
@@ -48,7 +49,10 @@ class Environment:
         # Make pits: pre-set and random
         self.pit_map = np.zeros((self.nR, self.nC))
         for i_pit in range(self.pit_vec.shape[0]):
-            self.pit_map[self.pit_vec[i_pit][0]][self.pit_vec[i_pit][1]] = 1
+            r = self.pit_vec[i_pit][0]
+            c = self.pit_vec[i_pit][1]
+            if not (np.abs(r - self.rTerm) <= 1 and np.abs(c - self.cTerm) <= 1):
+                self.pit_map[r][c] = 1
         for r in range(self.nR):
             for c in range(self.nC):
                 die = np.random.rand()
@@ -91,39 +95,24 @@ class Environment:
         X = X.reshape(np.prod(X.shape)).copy()
         return X
     def state_to_goalrelative(self):
-        if False:
-            X = np.zeros((2, 3))
-            if self.s_r < self.rTerm:
-                X[0,0] = 1
-            if self.s_r == self.rTerm:
-                X[0,1] = 1
-            if self.s_r > self.rTerm:
-                X[0,2] = 1
-            if self.s_c < self.cTerm:
-                X[1,0] = 1
-            if self.s_c == self.cTerm:
-                X[1,1] = 1
-            if self.s_c > self.cTerm:
-                X[1,2] = 1
-        else:
-            X = []
-            dr = 0
-            if self.s_r - self.rTerm > 0:
-                dr = 1
-            elif self.s_r - self.rTerm < 0:
-                dr = -1
-            dc = 0
-            if self.s_c - self.cTerm > 0:
-                dc = 1
-            elif self.s_c - self.cTerm < 0:
-                dc = -1
-            for r in range(-1, 2):
-                for c in range(-1, 2):
-                     if r == dr and c == dc:
-                        X.append(1)
-                     else:
-                        X.append(0)
-            X = np.array(X)
+        X = []
+        dr = 0
+        if self.s_r - self.rTerm > 0:
+            dr = 1
+        elif self.s_r - self.rTerm < 0:
+            dr = -1
+        dc = 0
+        if self.s_c - self.cTerm > 0:
+            dc = 1
+        elif self.s_c - self.cTerm < 0:
+            dc = -1
+        for r in range(-1, 2):
+            for c in range(-1, 2):
+                 if r == dr and c == dc:
+                    X.append(1)
+                 else:
+                    X.append(0)
+        X = np.array(X)
         X = X.reshape(np.prod(X.shape)).copy()
         return X
     def get_observables_indices(self):
@@ -154,7 +143,7 @@ class Environment:
             new_s_r = self.s_r + self.A_effect_vec[a][0]
             new_s_c = self.s_c + self.A_effect_vec[a][1]
             if (new_s_r >= 0 and new_s_r < self.nR) and (new_s_c >= 0 and new_s_c < self.nC) and not self.f_into_wall(new_s_r, new_s_c):
-                if not (new_s_r, new_s_c) in self.memory:
+                if (self.no_backtrack == False) or (not (new_s_r, new_s_c) in self.memory):
                     allowed_actions = np.append(allowed_actions, a)
         return X, allowed_actions
     def respond_to_action(self, a):
