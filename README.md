@@ -1,7 +1,7 @@
 # teg_actorCritic
 Actor-Critic reinforcement learning model with a toy environment.
 
-Practice project for Sutton & Barto. The model uses linear parameterizations for values and preferences. The code uses separate classes to make the separation of information between elements clear: the Environment (which responds to actions with state features and rewards), the Critic (which receives rewards and features from the Environment and bootstrap-learns state-value functions) and the Actor (which receives state features from the Environment and Temporal Difference signals from the critic and bootstrap-learns state-action preferences). There's also a Simulation class for convenience.
+Practice project for Sutton & Barto. The model uses linear parameterizations for values and preferences. The code uses separate classes to make the separation of information between elements clear: the Environment (which responds to actions with state features and rewards, as well as allowable actions), the Critic (which receives rewards and features from the Environment and bootstrap-learns state-value functions) and the Actor (which receives state features from the Environment and Temporal Difference signals from the critic and bootstrap-learns state-action preferences). There's also a Simulation class for convenience.
 
 In principle, the classes should be pretty general-purpose. The Environment just has to receive actions and produce rewards to work with them, and it should contain all the case-specific machinery connecting actions to rewards.
 
@@ -11,4 +11,4 @@ The two main cases are:
 
 - A static world (fixed start and terminal points and fixed objects like pits), with the actual grid coordinates as the observable feature. This works with Lambda = 0.5.
 
-- A varying world (randomized start and terminal points, both fixed objects and random pits), with the neighbouring pits and relative direction of the terminal point as observed features. This works with Lambda = 0.
+- A varying world (randomized start and terminal points, both fixed objects and random pits), with the neighbouring pits and relative direction of the terminal point as observed features. This works with Lambda = 0 and backtracking prevented (this is implemented via the selection of allowable actions by the Environment).
