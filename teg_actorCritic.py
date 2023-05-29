@@ -99,7 +99,7 @@ class Actor:
         self.theta0 = self.theta0 + self.alpha0 * delta0 * self.z
         self.I = self.I * self.gamma0
 
-class ActorCritic:
+class Agent:
     def __init__(self, nFeatures, nA):
         self.critic = Critic(nFeatures)
         self.actor = Actor(nFeatures, nA)
@@ -185,39 +185,3 @@ class Simulation:
         ax[2,0].pcolormesh(T_local)
         ax[2,2].pcolormesh(T_goal)
         plt.show()
-
-# Inits
-nR = 7; nC = 9;
-rStart = 0; cStart = 2;
-#rStart = np.nan; cStart = np.nan;
-rTerminal = 3; cTerminal = 7
-#rTerminal = np.nan; cTerminal = np.nan
-#rTerminal = 7; cTerminal = 7
-A_effect_vec = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 0], [0, 1], [1, -1], [1, 0], [1, 1]]
-#A_effect_vec = [[0, 1], [0, -1],[1, 0], [-1, 0]]
-wind_vec = np.zeros((nC))
-#wind_vec[np.array([3, 4, 5, 6])] = 1
-#pit_vec = np.array([])
-pit_vec = np.array([[2, 2], [2, 3]])
-pit_prob = 0.0
-pit_punishment = -1
-backtrack_punishment = 0
-off_grid_punishment = -1
-terminal_reward = 0
-#wall_vec = np.array([])
-wall_vec = np.array([[0, 4], [1, 4], [2, 4], [3, 4], [5, 4]]) # , [3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [8, 3], [9, 3]
-
-environment = Environment.Environment(nR, nC, rStart, cStart, rTerminal, cTerminal, A_effect_vec)
-environment.define_specifics(wind_vec, pit_vec, pit_prob, wall_vec, pit_punishment, backtrack_punishment, off_grid_punishment, terminal_reward, [True, False, False])
-environment.no_backtrack = False
-
-agent = ActorCritic(environment.nFeatures, environment.nA)
-agent.critic.lamba0 = 0.5
-agent.actor.lamba0 = 0.5
-
-max_episode_length = 1e6
-sim = Simulation(max_episode_length)
-
-agent = sim.train(1e4, environment, agent)
-route = sim.test(environment, agent)
-sim.plots(environment, agent, route)

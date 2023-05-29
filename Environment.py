@@ -1,37 +1,60 @@
 import numpy as np
 
 class Environment:
-    def __init__(self, nR, nC, rStart, cStart, rTerm, cTerm, A_effect_vec):
-        self.s_r = 0
-        self.s_c = 0
-        self.nR = nR
-        self.nC = nC
+    def __init__(self, A_effect_vec, observable_features=(True, False, False), no_backtrack=True, MapString='', random_pit_prob=0.0, nR=0, nC=0, rStart=0, cStart=0, rTerm=0, cTerm=0, pit_vec=np.array([]), wall_vec=np.array([])):
         self.A_effect_vec = A_effect_vec
         self.nA = len(self.A_effect_vec)
-        self.rStart = rStart
-        self.cStart = cStart
-        self.rTerm0 = rTerm # For np.nan random-per-episode terminal points
-        self.cTerm0 = cTerm
-        self.rTerm = rTerm
-        self.cTerm = cTerm
-        self.no_backtrack = False
-        self.mem_length = self.nR * self.nC # Avoid loops (exclude actions or punish? Punish affects mean r)
-        self.memory = []
-    def define_specifics(self, wind_vec, pit_vec, pit_prob=0.0, wall_vec=np.array([]), pit_punishment=-1, backtrack_punishment=-1, off_grid_punishment=-1, terminal_reward=0, observable_features=[True, False, False]):
-        self.wind_vec = wind_vec
-        self.pit_vec = pit_vec
+        if not len(MapString) == 0:
+            # Define world using a MapString
+            MapLines = [r for r in MapString.split('\n') if len(r) > 0]
+            tileCodes = np.array([np.fromstring(r, dtype=int, sep=' ') for r in MapLines])
+            self.nR = tileCodes.shape[0]
+            self.nC = tileCodes.shape[1]
+            self.rStart = np.where(tileCodes == 1)[0][0]
+            self.cStart = np.where(tileCodes == 1)[1][0]
+            self.rTerm0 = np.where(tileCodes == 2)[0][0]
+            self.cTerm0 = np.where(tileCodes == 2)[1][0]
+            self.pit_vec, self.wall_vec = self.tileCodes_to_vectors(tileCodes)
+        else:
+            # Define world directly using variables
+            self.nR = nR
+            self.nC = nC
+            self.rStart = rStart
+            self.cStart = cStart
+            self.rTerm0 = rTerm
+            self.cTerm0 = cTerm
+            self.pit_vec = pit_vec
+            self.wall_vec = wall_vec
+        self.s_r = 0
+        self.s_c = 0
+        self.rTerm = self.rTerm0
+        self.cTerm = self.cTerm0
         self.pit_map = np.zeros((self.nR, self.nC))
-        self.pit_prob = pit_prob
+        self.random_pit_prob = random_pit_prob
+        self.create_wall_map()
+        self.no_backtrack = no_backtrack
+        self.mem_length = self.nR * self.nC
+        self.memory = []
+        self.observable_features = observable_features  # Coordinates; local pits; goal direction
+        feature_vec, allowed_actions = self.state_to_features()
+        self.nFeatures = int(np.prod(feature_vec.shape))
+        self.run_checks()
+    def run_checks(self):
+        if self.rTerm0 == self.rStart and self.cTerm0 == self.cStart and not (np.isnan(self.rStart) or np.isnan(self.cStart)):
+            raise Exception("Invalid environment definition: start and terminal points are the same.")
+    def tileCodes_to_vectors(self, tileCodes):
+        pit_vec = np.array([z for z in zip(np.where(tileCodes == 3)[0], np.where(tileCodes == 3)[1])])
+        wall_vec = np.array([z for z in zip(np.where(tileCodes == 4)[0], np.where(tileCodes == 4)[1])])
+        return pit_vec, wall_vec
+    def create_wall_map(self):
         self.wall_map = np.zeros((self.nR, self.nC))
-        for i_wall in range(wall_vec.shape[0]):
-            self.wall_map[wall_vec[i_wall][0]][wall_vec[i_wall][1]] = 1
+        for i_wall in range(self.wall_vec.shape[0]):
+            self.wall_map[self.wall_vec[i_wall][0]][self.wall_vec[i_wall][1]] = 1
+    def set_rewards(self, pit_punishment=-1, backtrack_punishment=-1, off_grid_punishment=-1, terminal_reward=0):
         self.pit_punishment = pit_punishment
         self.backtrack_punishment = backtrack_punishment
         self.off_grid_punishment = off_grid_punishment
         self.terminal_reward = terminal_reward
-        self.observable_features = observable_features # Coordinates, local pits, goal direction
-        feature_vec, allowed_actions = self.state_to_features()
-        self.nFeatures = int(np.prod(feature_vec.shape))
     def init_episode(self):
         self.s_r = self.rStart
         self.s_c = self.cStart
@@ -56,7 +79,7 @@ class Environment:
         for r in range(self.nR):
             for c in range(self.nC):
                 die = np.random.rand()
-                if die < self.pit_prob:
+                if die < self.random_pit_prob:
                     if not (np.abs(r - self.rTerm) <= 1 and np.abs(c - self.cTerm) <= 1):
                         self.pit_map[r, c] = 1
         self.memory = [(self.s_r, self.s_c) for n in range(self.mem_length)]
@@ -151,15 +174,10 @@ class Environment:
         new_s_r = self.s_r + self.A_effect_vec[a][0]
         new_s_c = self.s_c + self.A_effect_vec[a][1]
         if new_s_c < 0 or new_s_c >= self.nC:
-            print('C OFF GRID')
             off_grid = True
         new_s_c = np.min([self.nC - 1, np.max([0, new_s_c])])
-        new_s_r = int(new_s_r + self.wind_vec[new_s_c])
         if new_s_r < 0 or new_s_r >= self.nR:
-            print('R OFF GRID')
             off_grid = True
-        s_r_mem = self.s_r
-        s_c_mem = self.s_c
         self.s_r = np.min([self.nR - 1, np.max([0, new_s_r])])
         self.s_c = np.min([self.nC - 1, np.max([0, new_s_c])])
         r = -1
@@ -169,10 +187,8 @@ class Environment:
             terminal = True
         else:
             if off_grid:
-                # terminal = True # Does entering a pit end the episode?
                 r = r + self.off_grid_punishment
             if self.f_pit():
-                # terminal = True # Does entering a pit end the episode?
                 r = r + self.pit_punishment
             if self.f_backtracking():
                 r = r + self.backtrack_punishment
