@@ -10,7 +10,7 @@ In this case, the environment is a 2D GridWorld, with a starting point and a ter
 The two main cases are shown in Examples.py:
 
 - A static world (fixed start and terminal points and fixed objects like pits), with the actual grid coordinates as the observable feature. The static world and its features can be defined via a multiline string, e.g.,
-
+```
 MapString = '''
 4 0 0 0 0 0 0 0 0 0
 0 0 0 0 0 4 2 0 0 0
@@ -19,5 +19,5 @@ MapString = '''
 3 3 3 3 0 3 3 0 0 0
 0 1 0 0 0 0 0 0 0 0
 '''
-
+```
 - A varying world (randomized start and terminal points and randomized pits), with the neighbouring pits and relative direction of the terminal point as observed features.
