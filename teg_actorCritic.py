@@ -3,6 +3,8 @@
 # From Sutton & Barto chapter 13.
 import numpy as np
 import matplotlib.pyplot as plt
+matplotlib.use('TkAgg')
+matplotlib.pyplot.ion()
 import Environment
 import importlib
 importlib.reload(Environment)
