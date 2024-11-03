@@ -89,8 +89,8 @@ off_grid_punishment = -1
 terminal_reward = 1
 observable_features = (True, False, False)
 nEpisodes = 1e2
-lambda_critic = 0.5
-lambda_actor = 0.5
+lambda_critic = 0.0
+lambda_actor = 0.0
 
 environment = Environment.Environment(A_effect_vec, observable_features, MapString=MapString, random_pit_prob=random_pit_prob)
 environment.set_rewards(pit_punishment=pit_punishment, backtrack_punishment=backtrack_punishment, off_grid_punishment=off_grid_punishment, terminal_reward=terminal_reward)
