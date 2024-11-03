@@ -166,8 +166,17 @@ class Environment:
             new_s_r = self.s_r + self.A_effect_vec[a][0]
             new_s_c = self.s_c + self.A_effect_vec[a][1]
             if (new_s_r >= 0 and new_s_r < self.nR) and (new_s_c >= 0 and new_s_c < self.nC) and not self.f_into_wall(new_s_r, new_s_c):
-                if (self.no_backtrack == False) or (not (new_s_r, new_s_c) in self.memory):
+                if ((self.no_backtrack == False) or (not (new_s_r, new_s_c) in self.memory)):
                     allowed_actions = np.append(allowed_actions, a)
+        if len(allowed_actions) == 0:
+            for a in range(len(self.A_effect_vec)):
+                new_s_r = self.s_r + self.A_effect_vec[a][0]
+                new_s_c = self.s_c + self.A_effect_vec[a][1]
+                if (new_s_r >= 0 and new_s_r < self.nR) and (new_s_c >= 0 and new_s_c < self.nC) and not self.f_into_wall(new_s_r, new_s_c):
+                    allowed_actions = np.append(allowed_actions, a)
+        if len(allowed_actions) == 0:
+            for n in range(100):
+                print('XXX');
         return X, allowed_actions
     def respond_to_action(self, a):
         off_grid = False
