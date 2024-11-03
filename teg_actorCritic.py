@@ -183,8 +183,10 @@ class Simulation:
         ax[1, 0].pcolormesh(W_local)
         ax[1, 1].pcolormesh(W_goal)
         more_map = np.zeros(environment.pit_map.shape)
-        more_map[environment.rStart, environment.cStart] = 3
-        more_map[environment.rTerm, environment.cTerm] = 4
+        if not np.isnan(environment.rStart):
+            more_map[environment.rStart, environment.cStart] = 3
+        if not np.isnan(environment.rTerm):
+            more_map[environment.rTerm, environment.cTerm] = 4
         ax[0, 2].pcolormesh(environment.pit_map + environment.wall_map * 2 + more_map)
         if len(routes) > 0:
             for route in routes:
