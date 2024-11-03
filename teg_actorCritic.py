@@ -3,6 +3,7 @@
 # From Sutton & Barto chapter 13.
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 matplotlib.use('TkAgg')
 matplotlib.pyplot.ion()
 import Environment
@@ -150,23 +151,26 @@ class Simulation:
                 iEpisode = iEpisode + 1
             t_ep = t_ep + 1
         return agent
-    def test(self, environment, agent):
-        environment.init_episode()
-        terminal = False
-        route = np.array([environment.s_r, environment.s_c])
-        t = 0
-        while not terminal:
-            print(t, ': ', end='')
-            feature_vec, allowed_actions = environment.state_to_features()
-            a = agent.actor.act_on_policy(feature_vec, allowed_actions=allowed_actions, error_free=True)
-            print('(', environment.s_r, environment.s_c, ')')
-            r, terminal = environment.respond_to_action(a)
-            if not terminal:
-                route = np.append(route, [environment.s_r, environment.s_c])
-            t = t + 1
-        route = route.reshape(int(len(route)/2), 2)
-        return route
-    def plots(self, environment, agent, route):
+    def test(self, environment, agent, nRoutes):
+        routes = []
+        for iRoute in range(nRoutes):
+            environment.init_episode()
+            terminal = False
+            route = np.array([environment.s_r, environment.s_c])
+            t = 0
+            while not terminal:
+                print(t, ': ', end='')
+                feature_vec, allowed_actions = environment.state_to_features()
+                a = agent.actor.act_on_policy(feature_vec, allowed_actions=allowed_actions, error_free=True)
+                print('(', environment.s_r, environment.s_c, ')')
+                r, terminal = environment.respond_to_action(a)
+                if True or not terminal:
+                    route = np.append(route, [environment.s_r, environment.s_c])
+                t = t + 1
+            route = route.reshape(int(len(route)/2), 2)
+            routes.append(route.copy())
+        return routes
+    def plots(self, environment, agent, routes):
         obs_ind = environment.get_observables_indices()
         W = agent.critic.w[obs_ind[0][0]:obs_ind[0][1]].reshape((environment.nR, environment.nC))
         W_local = np.max(agent.critic.w[obs_ind[1][0]:obs_ind[1][1]], axis=1).reshape(3, 3)
@@ -178,12 +182,20 @@ class Simulation:
         ax[0, 1].pcolormesh(W)
         ax[1, 0].pcolormesh(W_local)
         ax[1, 1].pcolormesh(W_goal)
-        ax[0, 2].pcolormesh(environment.pit_map + environment.wall_map * 2)
-        if len(route) > 0:
-            ax[0, 2].scatter(route[:, 1] + 0.5, route[:, 0] + 0.5)
-            ax[0, 2].plot(route[:, 1] + 0.5, route[:, 0] + 0.5)
+        more_map = np.zeros(environment.pit_map.shape)
+        more_map[environment.rStart, environment.cStart] = 3
+        more_map[environment.rTerm, environment.cTerm] = 4
+        ax[0, 2].pcolormesh(environment.pit_map + environment.wall_map * 2 + more_map)
+        if len(routes) > 0:
+            for route in routes:
+                print(route)
+                route_plot = route.copy().astype(float)
+                route_plot[:, 0] = route_plot[:, 0] + 0.1 * np.random.rand(route_plot.shape[0]) - 0.05
+                route_plot[:, 1] = route_plot[:, 1] + 0.1 * np.random.rand(route_plot.shape[0]) - 0.05
+                ax[0, 2].scatter(route_plot[:, 1] + 0.5, route_plot[:, 0] + 0.5)
+                ax[0, 2].plot(route_plot[:, 1] + 0.5, route_plot[:, 0] + 0.5)
             ax[0, 2].xaxis.set_ticks(ticks=np.array([range(environment.nC)]).reshape(environment.nC) + 0.5, labels=np.array([range(environment.nC)]).reshape(environment.nC))
             ax[0, 2].yaxis.set_ticks(ticks=np.array([range(environment.nR)]).reshape(environment.nR) + 0.5, labels=np.array([range(environment.nR)]).reshape(environment.nR))
         ax[2,0].pcolormesh(T_local)
         ax[2,2].pcolormesh(T_goal)
-        plt.show()
+        figs.show()
