@@ -17,6 +17,8 @@ class Critic:
         self.alpha0 = 0.1
         self.lambda0 = 0.5
         self.gamma0 = 0.9
+    def set_lambda(self, lambda0):
+        self.lambda0 = lambda0
     def get_v(self, feature_vec):
         return np.sum(feature_vec * self.w)
     def delta_v(self, feature_vec):
@@ -43,6 +45,8 @@ class Actor:
         self.gamma0 = 0.9
         self.I = 1
         self.a = 0
+    def set_lambda(self, lambda0):
+        self.lambda0 = lambda0
     def policy_prob(self, feature_vec, b):
         c = np.max(np.dot(np.transpose(feature_vec), self.theta0))
         prefs = np.exp(np.dot(np.transpose(feature_vec), self.theta0) - c)
