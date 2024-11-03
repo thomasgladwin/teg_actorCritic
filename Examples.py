@@ -31,8 +31,8 @@ environment = Environment.Environment(A_effect_vec, observable_features, MapStri
 environment.set_rewards(pit_punishment=pit_punishment, backtrack_punishment=backtrack_punishment, off_grid_punishment=off_grid_punishment, terminal_reward=terminal_reward)
 
 agent = teg_actorCritic.Agent(environment.nFeatures, environment.nA)
-agent.critic.lamba0 = 0.5
-agent.actor.lamba0 = 0.5
+agent.critic.lambda0 = 0.5
+agent.actor.lambda0 = 0.5
 
 max_episode_length = 1e4
 sim = teg_actorCritic.Simulation(max_episode_length)
@@ -59,8 +59,8 @@ environment = Environment.Environment(A_effect_vec, observable_features, nR=nR, 
 environment.set_rewards(pit_punishment=pit_punishment, backtrack_punishment=backtrack_punishment, off_grid_punishment=off_grid_punishment, terminal_reward=terminal_reward)
 
 agent = teg_actorCritic.Agent(environment.nFeatures, environment.nA)
-agent.critic.lamba0 = 0
-agent.actor.lamba0 = 0
+agent.critic.lambda0 = 0
+agent.actor.lambda0 = 0
 
 max_episode_length = 1e6
 sim = teg_actorCritic.Simulation(max_episode_length)
@@ -88,7 +88,7 @@ backtrack_punishment = 0
 off_grid_punishment = -1
 terminal_reward = 1
 observable_features = (True, False, False)
-nEpisodes = 1e3
+nEpisodes = 1e2
 lambda_critic = 0.0
 lambda_actor = 0.0
 
@@ -96,8 +96,8 @@ environment = Environment.Environment(A_effect_vec, observable_features, MapStri
 environment.set_rewards(pit_punishment=pit_punishment, backtrack_punishment=backtrack_punishment, off_grid_punishment=off_grid_punishment, terminal_reward=terminal_reward)
 
 agent = teg_actorCritic.Agent(environment.nFeatures, environment.nA)
-agent.critic.lamba0 = lambda_critic
-agent.actor.lamba0 = lambda_actor
+agent.critic.lambda0 = lambda_critic
+agent.actor.lambda0 = lambda_actor
 
 max_episode_length = 1e6
 sim = teg_actorCritic.Simulation(max_episode_length)
