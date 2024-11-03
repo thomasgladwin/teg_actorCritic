@@ -34,12 +34,12 @@ agent = teg_actorCritic.Agent(environment.nFeatures, environment.nA)
 agent.critic.lamba0 = 0.5
 agent.actor.lamba0 = 0.5
 
-max_episode_length = 1e6
+max_episode_length = 1e4
 sim = teg_actorCritic.Simulation(max_episode_length)
 
 agent = sim.train(1e3, environment, agent)
-route = sim.test(environment, agent)
-sim.plots(environment, agent, route)
+routes = sim.test(environment, agent, 5)
+sim.plots(environment, agent, routes)
 
 #
 # Random environment per episode (i.e., starting, terminal, and pit locations), relative environment features to learn
@@ -66,5 +66,43 @@ max_episode_length = 1e6
 sim = teg_actorCritic.Simulation(max_episode_length)
 
 agent = sim.train(1e3, environment, agent)
-route = sim.test(environment, agent)
-sim.plots(environment, agent, route)
+routes = sim.test(environment, agent, 5)
+sim.plots(environment, agent, routes)
+
+#
+# The Line.
+#
+# A_effect_vec defines the movement caused by actions.
+# MapString defines the world: 0 = default state, 1 = start, 2 = terminal, 3 = pit, 4 = wall.
+
+# A_effect_vec = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 0], [0, 1], [1, -1], [1, 0], [1, 1]]
+A_effect_vec = [[-1, 0], [0, -1], [0, 1], [1, 0]]
+MapString = '''
+4 4 4 4 4 4 4 4 4 4 4 4 4 4 4
+4 2 3 3 3 3 3 1 0 0 0 0 0 0 4
+4 4 4 4 4 4 4 4 4 4 4 4 4 4 4
+'''
+random_pit_prob = 0.0
+pit_punishment = -1
+backtrack_punishment = 0
+off_grid_punishment = -1
+terminal_reward = 1
+observable_features = (True, False, False)
+nEpisodes = 1e3
+lambda_critic = 0.0
+lambda_actor = 0.0
+
+environment = Environment.Environment(A_effect_vec, observable_features, MapString=MapString, random_pit_prob=random_pit_prob)
+environment.set_rewards(pit_punishment=pit_punishment, backtrack_punishment=backtrack_punishment, off_grid_punishment=off_grid_punishment, terminal_reward=terminal_reward)
+
+agent = teg_actorCritic.Agent(environment.nFeatures, environment.nA)
+agent.critic.lamba0 = lambda_critic
+agent.actor.lamba0 = lambda_actor
+
+max_episode_length = 1e6
+sim = teg_actorCritic.Simulation(max_episode_length)
+
+agent = sim.train(nEpisodes, environment, agent)
+routes = sim.test(environment, agent, 5)
+sim.plots(environment, agent, routes)
+
