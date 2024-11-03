@@ -74,7 +74,7 @@ class Environment:
         for i_pit in range(self.pit_vec.shape[0]):
             r = self.pit_vec[i_pit][0]
             c = self.pit_vec[i_pit][1]
-            if not (np.abs(r - self.rTerm) <= 1 and np.abs(c - self.cTerm) <= 1):
+            if True or (not (np.abs(r - self.rTerm) <= 1 and np.abs(c - self.cTerm) <= 1)):
                 self.pit_map[r][c] = 1
         for r in range(self.nR):
             for c in range(self.nC):
