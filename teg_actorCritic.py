@@ -206,4 +206,5 @@ class Simulation:
             ax[0, 2].yaxis.set_ticks(ticks=np.array([range(environment.nR)]).reshape(environment.nR) + 0.5, labels=np.array([range(environment.nR)]).reshape(environment.nR))
         ax[2,0].pcolormesh(T_local)
         ax[2,2].pcolormesh(T_goal)
+        figs.suptitle('LA=' + str(agent.actor.lambda0) + ', LC=' + str(agent.critic.lambda0))
         figs.show()
